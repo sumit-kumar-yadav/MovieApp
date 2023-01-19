@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import MovieList from "./Movielist";
 import Navbar from "./Navbar";
+import firebase from 'firebase';
 
 import { data } from "./data";
 class App extends Component {
@@ -10,6 +11,20 @@ class App extends Component {
       movies: data,
       cartItems: [],
     };
+  }
+
+  // Reading data from firebase when component is mounted (Updates automatically)
+  componentDidMount() {
+    firebase.firestore()
+      .collection("cartItems")
+      .onSnapshot(snapshot => {
+        const cartItems = snapshot.docs.map(doc => {
+          const data = doc.data();
+          data["id"] = doc.id;
+          return data;
+        });
+        this.setState({ cartItems: cartItems});
+      });
   }
 
   handleAddStars = (movieId) => {
@@ -43,18 +58,54 @@ class App extends Component {
   };
 
   handleResetCart = () => {
-    this.setState({ cartItems: [] });
+    // this.setState({ cartItems: [] });
+
+    firebase.firestore()
+      .collection("cartItems")
+        .get()
+        .then(docs => {
+          docs.forEach(doc => {
+            doc.ref.delete();
+          });
+        });
   };
 
   handleAddToCart = (movie) => {
-    this.setState((prev) => ({ cartItems: [...prev.cartItems, movie] }));
+    
+    firebase.firestore()
+      .collection("cartItems")
+      .add(movie)
+      .then(docRef => {
+        console.log("Movie has been added, docRef is: ", docRef);
+
+        docRef.get().then(snapshot => {
+          console.log("Movie has been added", snapshot.data());
+        });
+
+      })
+      .catch(error => {
+        console.log('Error while adding movie to cart: ', error);
+      });
+
   };
+
+
   handleRemoveFromCart = (movie) => {
-    const updatedCartItems = this.state.cartItems.filter(
-      (item) => item.id !== movie.id
-    );
-    this.setState({ cartItems: updatedCartItems });
+
+    const docRef = firebase.firestore().collection("cartItems").doc(movie.id);
+
+    docRef
+      .delete()
+      .then(() => {
+        console.log("Movie removed from cart sucessfully");
+      })
+      .catch(err => {
+        console.log("Error while removing a movie from cart.", err);
+      });
+
   };
+
+
   getTotal = () => {
     let total = 0;
     if (!this.state.cartItems.length) return 0;
