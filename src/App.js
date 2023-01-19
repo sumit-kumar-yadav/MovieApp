@@ -8,7 +8,7 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      movies: data,
+      movies: [],
       cartItems: [],
     };
   }
@@ -25,41 +25,89 @@ class App extends Component {
         });
         this.setState({ cartItems: cartItems});
       });
+
+    firebase.firestore()
+      .collection("movies")
+      .onSnapshot(snapshot => {
+        const movies = snapshot.docs.map(doc => {
+          const data = doc.data();
+          data["id"] = doc.id;
+          return data;
+        });
+        this.setState({ movies: movies});
+      });
+
+      // If movies are already added to firebase data, then don't add again 
+      firebase.firestore().collection("movies")
+        .get().then(snapshot => {
+          let allDocRefs = snapshot.docs;
+          if(allDocRefs.length == 0){
+            // Add movies to the firebase data
+            data.forEach((movie)=>{
+              firebase.firestore()
+                .collection("movies")
+                .add(movie)
+            });
+          }
+        });
+
   }
 
   handleAddStars = (movieId) => {
-    const updatedMovies = this.state.movies.map((movie) => {
-      if (movie.id === movieId && movie.Stars < 5) {
-        movie.Stars += 0.5;
+    const docRef = firebase.firestore().collection("movies").doc(movieId);
+
+    docRef.get().then(snapshot => {
+      let movie = snapshot.data();
+      if(movie.Stars < 5){
+        docRef
+          .update({Stars: movie.Stars + 1})
+          .then(() => {
+            console.log("Updated sucessfully");
+          })
+          .catch(error => {
+            console.log(error);
+          });
       }
-      return movie;
     });
-    this.setState({ movies: updatedMovies });
   };
 
   handleDecStars = (movieId) => {
-    const updatedMovies = this.state.movies.map((movie) => {
-      if (movie.id === movieId && movie.Stars > 0) {
-        movie.Stars -= 0.5;
+    const docRef = firebase.firestore().collection("movies").doc(movieId);
+
+    docRef.get().then(snapshot => {
+      let movie = snapshot.data();
+      if(movie.Stars > 0){
+        docRef
+          .update({Stars: movie.Stars - 1})
+          .then(() => {
+            console.log("Updated sucessfully");
+          })
+          .catch(error => {
+            console.log(error);
+          });
       }
-      return movie;
     });
-    this.setState({ movies: updatedMovies });
   };
 
   handleToggleFav = (movieId) => {
-    const updatedMovies = this.state.movies.map((movie) => {
-      if (movie.id === movieId) {
-        movie.Favourite = !movie.Favourite;
-      }
-      return movie;
+
+    const docRef = firebase.firestore().collection("movies").doc(movieId);
+
+    docRef.get().then(snapshot => {
+      let movie = snapshot.data();
+      docRef
+        .update({Favourite: !movie.Favourite})
+        .then(() => {
+          console.log("Updated sucessfully");
+        })
+        .catch(error => {
+          console.log(error);
+        });
     });
-    this.setState({ movies: updatedMovies });
+
   };
 
   handleResetCart = () => {
-    // this.setState({ cartItems: [] });
-
     firebase.firestore()
       .collection("cartItems")
         .get()
