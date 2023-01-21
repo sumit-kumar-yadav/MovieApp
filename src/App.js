@@ -1,7 +1,8 @@
 import React, { Component } from "react";
 import MovieList from "./Movielist";
 import Navbar from "./Navbar";
-import firebase from 'firebase';
+import firebase from "firebase";
+import { collection, getDocs } from "firebase/firestore";
 
 import { data } from "./data";
 class App extends Component {
@@ -15,56 +16,59 @@ class App extends Component {
 
   // Reading data from firebase when component is mounted (Updates automatically)
   componentDidMount() {
-    firebase.firestore()
+    firebase
+      .firestore()
       .collection("cartItems")
-      .onSnapshot(snapshot => {
-        const cartItems = snapshot.docs.map(doc => {
+      .onSnapshot((snapshot) => {
+        const cartItems = snapshot.docs.map((doc) => {
           const data = doc.data();
+          console.log(data);
           data["id"] = doc.id;
           return data;
         });
-        this.setState({ cartItems: cartItems});
+        this.setState({ cartItems: cartItems });
       });
 
-    firebase.firestore()
+    firebase
+      .firestore()
       .collection("movies")
-      .onSnapshot(snapshot => {
-        const movies = snapshot.docs.map(doc => {
+      .onSnapshot((snapshot) => {
+        const movies = snapshot.docs.map((doc) => {
           const data = doc.data();
           data["id"] = doc.id;
           return data;
         });
-        this.setState({ movies: movies});
+        this.setState({ movies: movies });
       });
 
-      // If movies are already added to firebase data, then don't add again 
-      firebase.firestore().collection("movies")
-        .get().then(snapshot => {
-          let allDocRefs = snapshot.docs;
-          if(allDocRefs.length == 0){
-            // Add movies to the firebase data
-            data.forEach((movie)=>{
-              firebase.firestore()
-                .collection("movies")
-                .add(movie)
-            });
-          }
-        });
-
+    // If movies are already added to firebase data, then don't add again
+    firebase
+      .firestore()
+      .collection("movies")
+      .get()
+      .then((snapshot) => {
+        let allDocRefs = snapshot.docs;
+        if (allDocRefs.length === 0) {
+          // Add movies to the firebase data
+          data.forEach((movie) => {
+            firebase.firestore().collection("movies").add(movie);
+          });
+        }
+      });
   }
 
   handleAddStars = (movieId) => {
     const docRef = firebase.firestore().collection("movies").doc(movieId);
 
-    docRef.get().then(snapshot => {
+    docRef.get().then((snapshot) => {
       let movie = snapshot.data();
-      if(movie.Stars < 5){
+      if (movie.Stars < 5) {
         docRef
-          .update({Stars: movie.Stars + 1})
+          .update({ Stars: movie.Stars + 1 })
           .then(() => {
             console.log("Updated sucessfully");
           })
-          .catch(error => {
+          .catch((error) => {
             console.log(error);
           });
       }
@@ -74,15 +78,15 @@ class App extends Component {
   handleDecStars = (movieId) => {
     const docRef = firebase.firestore().collection("movies").doc(movieId);
 
-    docRef.get().then(snapshot => {
+    docRef.get().then((snapshot) => {
       let movie = snapshot.data();
-      if(movie.Stars > 0){
+      if (movie.Stars > 0) {
         docRef
-          .update({Stars: movie.Stars - 1})
+          .update({ Stars: movie.Stars - 1 })
           .then(() => {
             console.log("Updated sucessfully");
           })
-          .catch(error => {
+          .catch((error) => {
             console.log(error);
           });
       }
@@ -90,69 +94,75 @@ class App extends Component {
   };
 
   handleToggleFav = (movieId) => {
-
     const docRef = firebase.firestore().collection("movies").doc(movieId);
 
-    docRef.get().then(snapshot => {
+    docRef.get().then((snapshot) => {
       let movie = snapshot.data();
       docRef
-        .update({Favourite: !movie.Favourite})
+        .update({ Favourite: !movie.Favourite })
         .then(() => {
           console.log("Updated sucessfully");
         })
-        .catch(error => {
+        .catch((error) => {
           console.log(error);
         });
     });
-
   };
 
   handleResetCart = () => {
-    firebase.firestore()
+    firebase
+      .firestore()
       .collection("cartItems")
-        .get()
-        .then(docs => {
-          docs.forEach(doc => {
-            doc.ref.delete();
-          });
+      .get()
+      .then((docs) => {
+        docs.forEach((doc) => {
+          doc.ref.delete();
         });
+      });
   };
 
   handleAddToCart = (movie) => {
-    
-    firebase.firestore()
+    firebase
+      .firestore()
       .collection("cartItems")
       .add(movie)
-      .then(docRef => {
+      .then((docRef) => {
         console.log("Movie has been added, docRef is: ", docRef);
 
-        docRef.get().then(snapshot => {
+        docRef.get().then((snapshot) => {
           console.log("Movie has been added", snapshot.data());
         });
-
       })
-      .catch(error => {
-        console.log('Error while adding movie to cart: ', error);
+      .catch((error) => {
+        console.log("Error while adding movie to cart: ", error);
       });
-
   };
 
-
-  handleRemoveFromCart = (movie) => {
-
-    const docRef = firebase.firestore().collection("cartItems").doc(movie.id);
-
-    docRef
-      .delete()
-      .then(() => {
-        console.log("Movie removed from cart sucessfully");
-      })
-      .catch(err => {
-        console.log("Error while removing a movie from cart.", err);
+  handleRemoveFromCart = async (movie) => {
+    firebase
+      .firestore()
+      .collection("cartItems")
+      .get()
+      .then(function (querySnapshot) {
+        querySnapshot.forEach(function (doc) {
+          const data = doc.data();
+          if (data.imdbID === movie.imdbID) {
+            doc.ref.delete();
+          }
+        });
       });
 
+    // const docRef = firebase.firestore().collection("cartItems").doc(movie.id);
+    // console.log(movie.id);
+    // docRef
+    //   .delete()
+    //   .then(() => {
+    //     console.log("Movie removed from cart sucessfully");
+    //   })
+    //   .catch((err) => {
+    //     console.log("Error while removing a movie from cart.", err);
+    //   });
   };
-
 
   getTotal = () => {
     let total = 0;
@@ -169,6 +179,7 @@ class App extends Component {
       <div className="App">
         <Navbar
           cartItems={this.state.cartItems}
+          onRemoveFromCart={this.handleRemoveFromCart}
           onResetCart={this.handleResetCart}
         />
         <MovieList

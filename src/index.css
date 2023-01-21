@@ -118,7 +118,15 @@ footer.starCount {
 
 .cart-btn.remove {
   background-color: #db2828;
+  border: none;
 }
+
+.oncart-remove {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+}
+
 .unfavourite-btn {
   background-color: #db2828;
   color: #fff;
@@ -153,6 +161,7 @@ footer.starCount {
   align-items: center;
   padding: 10px;
   background-color: #fff;
+  position: relative;
 }
 
 .cart-list > button {
