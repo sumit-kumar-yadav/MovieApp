@@ -12,7 +12,7 @@ class Navbar extends Component {
   };
 
   render() {
-    const { cartItems, onResetCart } = this.props;
+    const { cartItems, onResetCart, onRemoveFromCart } = this.props;
 
     return (
       <div style={styles.nav}>
@@ -20,6 +20,7 @@ class Navbar extends Component {
           <CartList
             items={cartItems}
             onReset={onResetCart}
+            removeFromCart={onRemoveFromCart}
             toggleCartList={this.toggleCartList}
           />
         )}

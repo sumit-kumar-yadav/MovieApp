@@ -12,7 +12,6 @@ class MovieCard extends React.Component {
     const { Title, Poster, Plot, imdbRating, Price, Favourite, Stars } =
       this.props.movie;
 
-      console.log("Value is ", this.props.isInCart);
     return (
       <>
         <div className="main">

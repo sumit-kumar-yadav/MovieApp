@@ -3,7 +3,7 @@ import MovieCard from "./MovieCard";
 
 class MovieList extends React.Component {
   isMovieInCart = (movieId) => {
-    return !!this.props.cartItems.find((item) => item.id === movieId);
+    return !!this.props.cartItems.find((item) => item.imdbID === movieId);
   };
   render() {
     const {
@@ -18,7 +18,7 @@ class MovieList extends React.Component {
       <>
         {movies.map((movie) => (
           <MovieCard
-            isInCart={this.isMovieInCart(movie.id)}
+            isInCart={this.isMovieInCart(movie.imdbID)}
             addToCart={onAddToCart}
             removeFromCart={onRemoveFromCart}
             movie={movie}
